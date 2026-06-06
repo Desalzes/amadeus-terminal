@@ -1,32 +1,29 @@
 from a2a.server.tasks import TaskUpdater
-from a2a.types import Message, TaskState, Part, TextPart
-from a2a.utils import get_message_text, new_agent_text_message
+from a2a.types import Message, Part, TextPart
+from a2a.utils import get_message_text
 
-from messenger import Messenger
+from protocol import TaskEnvelope, ExecResultEnvelope, decode_inbound
+from controller import Controller
+from llm import decide
+from config import load_settings
 
 
 class Agent:
-    def __init__(self):
-        self.messenger = Messenger()
-        # Initialize other state here
+    """One instance per A2A conversation (keyed by context_id in the Executor)."""
+
+    def __init__(self) -> None:
+        s = load_settings()
+        self.controller = Controller(
+            model=s.model, decide=decide, max_turns=s.max_turns,
+            command_timeout=s.command_timeout, max_output_chars=s.max_output_chars,
+        )
 
     async def run(self, message: Message, updater: TaskUpdater) -> None:
-        """Implement your agent logic here.
-
-        Args:
-            message: The incoming message
-            updater: Report progress (update_status) and results (add_artifact)
-
-        Use self.messenger.talk_to_agent(message, url) to call other agents.
-        """
-        input_text = get_message_text(message)
-
-        # Replace this example code with your agent logic
-
-        await updater.update_status(
-            TaskState.working, new_agent_text_message("Thinking...")
-        )
-        await updater.add_artifact(
-            parts=[Part(root=TextPart(text=input_text))],
-            name="Echo",
-        )
+        inbound = decode_inbound(get_message_text(message))
+        if isinstance(inbound, TaskEnvelope):
+            outbound = self.controller.on_task(inbound.instruction)
+        elif isinstance(inbound, ExecResultEnvelope):
+            outbound = self.controller.on_exec_result(inbound)
+        else:
+            outbound = "Amadeus terminal agent ready."  # non-protocol (e.g. conformance "Hello")
+        await updater.add_artifact(parts=[Part(root=TextPart(text=outbound))], name="Amadeus")
