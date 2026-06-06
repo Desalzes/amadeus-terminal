@@ -42,3 +42,8 @@ def test_output_truncation():
 def test_empty_command_finalizes():
     c, _ = make([{"action": "run", "command": "   "}])
     assert json.loads(c.on_task("t"))["kind"] == "final"
+
+def test_non_numeric_timeout_uses_default():
+    c, _ = make([{"action": "run", "command": "ls", "timeout": "fast"}], command_timeout=60)
+    out = json.loads(c.on_task("t"))
+    assert out["kind"] == "exec_request" and out["timeout"] == 60

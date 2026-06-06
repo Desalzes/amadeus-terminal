@@ -53,7 +53,10 @@ class Controller:
             command = str(action.get("command", "")).strip()
             if not command:
                 return encode_final("No command produced.")
-            timeout = int(action.get("timeout", self.command_timeout) or self.command_timeout)
+            try:
+                timeout = int(action.get("timeout", self.command_timeout))
+            except (TypeError, ValueError):
+                timeout = self.command_timeout
             return encode_exec_request(command, timeout=timeout)
         return encode_final(str(action.get("summary", "")))
 
