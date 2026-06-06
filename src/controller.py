@@ -69,6 +69,8 @@ class Controller:
             return encode_exec_request(command, timeout=timeout)
         # action == "final": run a verify/critic gate before actually finishing.
         if self._verify_used < self.max_verify_interventions:
+            if self.deadline_seconds is not None and (time.monotonic() - self._start) >= self.deadline_seconds:
+                return encode_final(str(action.get("summary", "")))
             self._verify_used += 1
             self.messages.append({
                 "role": "user",

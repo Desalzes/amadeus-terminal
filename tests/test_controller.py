@@ -88,3 +88,21 @@ def test_critic_uses_critic_model():
     c = Controller(model="main/m", critic_model="critic/c", decide=decide, max_verify_interventions=1)
     c.on_task("t")
     assert "main/m" in seen and "critic/c" in seen
+
+def test_verify_gate_non_numeric_timeout_uses_default():
+    actions = [
+        {"action": "final", "summary": "x"},
+        {"action": "run", "command": "ls", "timeout": "fast"},
+    ]
+    c, _ = make(actions, max_verify_interventions=1, command_timeout=60)
+    out = json.loads(c.on_task("t"))
+    assert out == {"kind": "exec_request", "command": "ls", "timeout": 60}
+
+def test_verify_gate_empty_critic_command_finalizes():
+    actions = [
+        {"action": "final", "summary": "orig"},
+        {"action": "run", "command": "   "},
+    ]
+    c, _ = make(actions, max_verify_interventions=1)
+    out = json.loads(c.on_task("t"))
+    assert out["kind"] == "final"
