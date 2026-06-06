@@ -20,3 +20,9 @@ def test_env_override(monkeypatch):
     monkeypatch.setenv("AMADEUS_MAX_TURNS", "10")
     s = load_settings()
     assert s.model == "openai/gpt-5.5" and s.max_turns == 10
+
+def test_empty_model_env_falls_back_to_default(monkeypatch):
+    # amber substitutes "${config.model}" -> "" when no model config is given;
+    # an empty AMADEUS_MODEL must NOT override the default (else litellm gets model="").
+    monkeypatch.setenv("AMADEUS_MODEL", "")
+    assert load_settings().model == "anthropic/claude-opus-4-8"

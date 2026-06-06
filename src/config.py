@@ -14,7 +14,7 @@ class Settings:
 
 def load_settings() -> Settings:
     return Settings(
-        model=os.getenv("AMADEUS_MODEL", "anthropic/claude-opus-4-8"),
+        model=os.getenv("AMADEUS_MODEL") or "anthropic/claude-opus-4-8",
         critic_model=os.getenv("AMADEUS_CRITIC_MODEL", ""),
         max_turns=int(os.getenv("AMADEUS_MAX_TURNS", "40")),
         command_timeout=int(os.getenv("AMADEUS_CMD_TIMEOUT", "60")),
