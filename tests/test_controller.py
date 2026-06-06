@@ -1,0 +1,44 @@
+import json, sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+from controller import Controller
+from protocol import ExecResultEnvelope
+
+class StubLLM:
+    """Returns scripted actions in order; records the messages it saw."""
+    def __init__(self, actions): self.actions = list(actions); self.calls = []
+    def __call__(self, messages, *, model, **kw):
+        self.calls.append(list(messages))
+        return self.actions.pop(0)
+
+def make(actions, **kw):
+    stub = StubLLM(actions)
+    return Controller(model="m", decide=stub, **kw), stub
+
+def test_task_then_run():
+    c, _ = make([{"action": "run", "command": "ls", "timeout": 5}])
+    out = json.loads(c.on_task("do it"))
+    assert out == {"kind": "exec_request", "command": "ls", "timeout": 5}
+
+def test_result_then_final():
+    c, _ = make([{"action": "run", "command": "ls"}, {"action": "final", "summary": "ok"}])
+    c.on_task("do it")
+    out = json.loads(c.on_exec_result(ExecResultEnvelope(0, "file.txt", "")))
+    assert out == {"kind": "final", "summary": "ok"}
+
+def test_turn_cap_forces_final():
+    actions = [{"action": "run", "command": "x"}] * 5
+    c, _ = make(actions, max_turns=2)
+    assert json.loads(c.on_task("t"))["kind"] == "exec_request"
+    assert json.loads(c.on_exec_result(ExecResultEnvelope(0, "", "")))["kind"] == "exec_request"
+    assert json.loads(c.on_exec_result(ExecResultEnvelope(0, "", "")))["kind"] == "final"
+
+def test_output_truncation():
+    c, stub = make([{"action": "run", "command": "a"}, {"action": "run", "command": "b"}], max_output_chars=20)
+    c.on_task("t")
+    c.on_exec_result(ExecResultEnvelope(0, "X" * 1000, ""))
+    assert "[truncated]" in stub.calls[1][-1]["content"]
+
+def test_empty_command_finalizes():
+    c, _ = make([{"action": "run", "command": "   "}])
+    assert json.loads(c.on_task("t"))["kind"] == "final"
