@@ -24,18 +24,18 @@ def main():
     # See: https://a2a-protocol.org/latest/tutorials/python/3-agent-skills-and-card/
     
     skill = AgentSkill(
-        id="",
-        name="",
-        description="",
-        tags=[],
-        examples=[]
+        id="terminal-bench",
+        name="Terminal task solving",
+        description="Solves terminal/CLI engineering tasks autonomously via the terminal-bench-shell-v1 protocol.",
+        tags=["terminal", "coding", "agent"],
+        examples=["Fix the failing git repository", "Build and run the project tests"],
     )
 
     agent_card = AgentCard(
-        name="",
-        description="",
+        name="Amadeus",
+        description="Autonomous terminal engineer for Terminal-Bench 2.0 (plan/execute/verify/repair).",
         url=args.card_url or f"http://{args.host}:{args.port}/",
-        version='1.0.0',
+        version='0.1.0',
         default_input_modes=['text'],
         default_output_modes=['text'],
         capabilities=AgentCapabilities(streaming=True),
