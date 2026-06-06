@@ -30,7 +30,10 @@ class Controller:
     messages: list[dict[str, Any]] = field(default_factory=list)
     turns: int = 0
     deadline_seconds: float | None = None
+    critic_model: str = ""
+    max_verify_interventions: int = 2
     _start: float = field(default=0.0, repr=False)
+    _verify_used: int = field(default=0, repr=False)
 
     def on_task(self, instruction: str) -> str:
         self._start = time.monotonic()
@@ -64,6 +67,29 @@ class Controller:
             except (TypeError, ValueError):
                 timeout = self.command_timeout
             return encode_exec_request(command, timeout=timeout)
+        # action == "final": run a verify/critic gate before actually finishing.
+        if self._verify_used < self.max_verify_interventions:
+            self._verify_used += 1
+            self.messages.append({
+                "role": "user",
+                "content": (
+                    "Before finishing, VERIFY the task is truly complete: run the project's "
+                    "tests/build or inspect the expected files/state. If anything is unverified or "
+                    "wrong, return a run action to check or fix it; only return final once you have "
+                    "positive evidence."
+                ),
+            })
+            check = self.decide(self.messages, model=self.critic_model or self.model)
+            self.messages.append({"role": "assistant", "content": json.dumps(check)})
+            if check.get("action") == "run":
+                command = str(check.get("command", "")).strip()
+                if command:
+                    try:
+                        timeout = int(check.get("timeout", self.command_timeout))
+                    except (TypeError, ValueError):
+                        timeout = self.command_timeout
+                    return encode_exec_request(command, timeout=timeout)
+            return encode_final(str(check.get("summary", action.get("summary", ""))))
         return encode_final(str(action.get("summary", "")))
 
     def _truncate(self, text: str) -> str:

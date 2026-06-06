@@ -25,6 +25,7 @@ def test_agent_creates_file(tmp_path):
         {"action": "run", "command": "printf hi > hello.txt"},
         {"action": "run", "command": "cat hello.txt"},
         {"action": "final", "summary": "created hello.txt"},
+        {"action": "final", "summary": "verified"},  # verify-gate critic approves
     ]
     c = Controller(model="m", decide=ScriptLLM(actions))
     transcript = run_episode(c, "create hello.txt containing hi", str(tmp_path))

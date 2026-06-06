@@ -19,6 +19,7 @@ def test_agent_handles_task_then_result():
     actions = iter([{"action": "run", "command": "ls", "timeout": 5}, {"action": "final", "summary": "ok"}])
     agent = Agent()
     agent.controller.decide = lambda *a, **k: next(actions)
+    agent.controller.max_verify_interventions = 0
     u1 = FakeUpdater()
     asyncio.run(agent.run(_msg(json.dumps({"kind": "task", "instruction": "do"})), u1))
     assert json.loads(_artifact_text(u1))["kind"] == "exec_request"

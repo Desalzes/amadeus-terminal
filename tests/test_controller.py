@@ -21,7 +21,7 @@ def test_task_then_run():
     assert out == {"kind": "exec_request", "command": "ls", "timeout": 5}
 
 def test_result_then_final():
-    c, _ = make([{"action": "run", "command": "ls"}, {"action": "final", "summary": "ok"}])
+    c, _ = make([{"action": "run", "command": "ls"}, {"action": "final", "summary": "ok"}], max_verify_interventions=0)
     c.on_task("do it")
     out = json.loads(c.on_exec_result(ExecResultEnvelope(0, "file.txt", "")))
     assert out == {"kind": "final", "summary": "ok"}
@@ -56,3 +56,35 @@ def test_wall_clock_self_limit():
 def test_plan_message_present():
     from controller import SYSTEM_PROMPT
     assert "PLAN" in SYSTEM_PROMPT and "VERIFY" in SYSTEM_PROMPT
+
+def test_verify_gate_runs_check_before_final():
+    actions = [
+        {"action": "final", "summary": "done"},
+        {"action": "run", "command": "pytest -q"},
+        {"action": "final", "summary": "verified"},
+    ]
+    c, _ = make(actions, max_verify_interventions=1)
+    out = json.loads(c.on_task("t"))
+    assert out == {"kind": "exec_request", "command": "pytest -q", "timeout": 60}
+    out2 = json.loads(c.on_exec_result(ExecResultEnvelope(0, "1 passed", "")))
+    assert out2["kind"] == "final"
+
+def test_verify_gate_cap():
+    actions = [
+        {"action": "final", "summary": "a"},
+        {"action": "run", "command": "echo check"},
+        {"action": "final", "summary": "b"},
+    ]
+    c, _ = make(actions, max_verify_interventions=1)
+    c.on_task("t")  # gate fires once -> exec_request
+    out = json.loads(c.on_exec_result(ExecResultEnvelope(0, "", "")))
+    assert out == {"kind": "final", "summary": "b"}
+
+def test_critic_uses_critic_model():
+    seen = []
+    def decide(messages, *, model, **kw):
+        seen.append(model)
+        return {"action": "final", "summary": "x"}
+    c = Controller(model="main/m", critic_model="critic/c", decide=decide, max_verify_interventions=1)
+    c.on_task("t")
+    assert "main/m" in seen and "critic/c" in seen
