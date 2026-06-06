@@ -16,6 +16,7 @@ class Agent:
         self.controller = Controller(
             model=s.model, decide=decide, max_turns=s.max_turns,
             command_timeout=s.command_timeout, max_output_chars=s.max_output_chars,
+            deadline_seconds=s.deadline_seconds,
         )
 
     async def run(self, message: Message, updater: TaskUpdater) -> None:

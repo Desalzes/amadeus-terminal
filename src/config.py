@@ -9,6 +9,7 @@ class Settings:
     max_turns: int
     command_timeout: int
     max_output_chars: int
+    deadline_seconds: int
 
 
 def load_settings() -> Settings:
@@ -18,4 +19,5 @@ def load_settings() -> Settings:
         max_turns=int(os.getenv("AMADEUS_MAX_TURNS", "40")),
         command_timeout=int(os.getenv("AMADEUS_CMD_TIMEOUT", "60")),
         max_output_chars=int(os.getenv("AMADEUS_MAX_OUTPUT", "8000")),
+        deadline_seconds=int(os.getenv("AMADEUS_DEADLINE_SEC", "600")),
     )

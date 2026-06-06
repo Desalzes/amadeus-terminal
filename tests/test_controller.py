@@ -47,3 +47,12 @@ def test_non_numeric_timeout_uses_default():
     c, _ = make([{"action": "run", "command": "ls", "timeout": "fast"}], command_timeout=60)
     out = json.loads(c.on_task("t"))
     assert out["kind"] == "exec_request" and out["timeout"] == 60
+
+def test_wall_clock_self_limit():
+    c, _ = make([{"action": "run", "command": "x"}] * 5, deadline_seconds=0)
+    out = json.loads(c.on_task("t"))
+    assert out["kind"] == "final"
+
+def test_plan_message_present():
+    from controller import SYSTEM_PROMPT
+    assert "PLAN" in SYSTEM_PROMPT and "VERIFY" in SYSTEM_PROMPT

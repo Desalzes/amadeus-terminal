@@ -1,5 +1,6 @@
 from __future__ import annotations
 import json
+import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
 
@@ -28,8 +29,11 @@ class Controller:
     max_output_chars: int = 8000
     messages: list[dict[str, Any]] = field(default_factory=list)
     turns: int = 0
+    deadline_seconds: float | None = None
+    _start: float = field(default=0.0, repr=False)
 
     def on_task(self, instruction: str) -> str:
+        self._start = time.monotonic()
         self.messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"TASK:\n{instruction}\n\nBegin by exploring."},
@@ -46,6 +50,8 @@ class Controller:
     def _next_action(self) -> str:
         if self.turns >= self.max_turns:
             return encode_final("Turn budget exhausted.")
+        if self.deadline_seconds is not None and (time.monotonic() - self._start) >= self.deadline_seconds:
+            return encode_final("Wall-clock budget exhausted.")
         self.turns += 1
         action = self.decide(self.messages, model=self.model)
         self.messages.append({"role": "assistant", "content": json.dumps(action)})
