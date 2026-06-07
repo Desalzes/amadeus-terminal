@@ -6,6 +6,7 @@ def test_amber_manifest_and_dockerfile_have_single_startup_command():
     dockerfile = Path("Dockerfile").read_text()
     workflow = Path(".github/workflows/test-and-publish.yml").read_text()
 
+    assert 'manifest_version: "0.2.0"' in manifest
     assert 'image: "ghcr.io/desalzes/amadeus-terminal:latest"' in manifest
     assert 'entrypoint: "uv run python src/server.py --host 0.0.0.0 --port 9009"' in manifest
     assert "ENTRYPOINT" not in dockerfile

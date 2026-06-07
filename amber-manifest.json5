@@ -1,5 +1,5 @@
 {
-  manifest_version: "0.1.0",
+  manifest_version: "0.2.0",
 
   // Config the deployer supplies per assessment. API keys are secrets; all optional
   // (the agent defaults the model and runs key-less for the agent-card/conformance path).
