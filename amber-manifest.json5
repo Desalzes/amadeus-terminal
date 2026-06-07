@@ -19,10 +19,22 @@
     image: "ghcr.io/desalzes/amadeus-terminal:latest",
     entrypoint: "uv run python src/server.py --host 0.0.0.0 --port 9009",
     env: {
-      ANTHROPIC_API_KEY: "${config.anthropic_api_key}",
-      OPENAI_API_KEY: "${config.openai_api_key}",
-      AMADEUS_MODEL: "${config.model}",
-      AMADEUS_CRITIC_MODEL: "${config.critic_model}",
+      ANTHROPIC_API_KEY: {
+        when: "config.anthropic_api_key",
+        value: "${config.anthropic_api_key}",
+      },
+      OPENAI_API_KEY: {
+        when: "config.openai_api_key",
+        value: "${config.openai_api_key}",
+      },
+      AMADEUS_MODEL: {
+        when: "config.model",
+        value: "${config.model}",
+      },
+      AMADEUS_CRITIC_MODEL: {
+        when: "config.critic_model",
+        value: "${config.critic_model}",
+      },
     },
     network: {
       endpoints: [
