@@ -169,6 +169,7 @@ def test_agent_card(agent):
     errors = validate_agent_card(card_data)
 
     assert not errors, f"Agent card validation failed:\n" + "\n".join(errors)
+    assert "0.0.0.0" not in card_data["url"], "Agent card must not advertise wildcard bind host"
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("streaming", [True, False])

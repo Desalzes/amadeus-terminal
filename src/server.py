@@ -13,6 +13,11 @@ from a2a.types import (
 from executor import Executor
 
 
+def _default_card_url(host: str, port: int) -> str:
+    advertised_host = "127.0.0.1" if host == "0.0.0.0" else host
+    return f"http://{advertised_host}:{port}/"
+
+
 def main():
     parser = argparse.ArgumentParser(description="Run the A2A agent.")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host to bind the server")
@@ -34,7 +39,7 @@ def main():
     agent_card = AgentCard(
         name="Amadeus",
         description="Autonomous terminal engineer for Terminal-Bench 2.0 (plan/execute/verify/repair).",
-        url=args.card_url or f"http://{args.host}:{args.port}/",
+        url=args.card_url or _default_card_url(args.host, args.port),
         version='0.1.0',
         default_input_modes=['text'],
         default_output_modes=['text'],

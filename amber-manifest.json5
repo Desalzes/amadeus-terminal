@@ -17,6 +17,7 @@
 
   program: {
     image: "ghcr.io/desalzes/amadeus-terminal:latest",
+    entrypoint: "uv run python src/server.py --host 0.0.0.0 --port 9009",
     env: {
       ANTHROPIC_API_KEY: "${config.anthropic_api_key}",
       OPENAI_API_KEY: "${config.openai_api_key}",
